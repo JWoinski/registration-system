@@ -1,0 +1,49 @@
+School registration system
+
+Design and implement simple school registration system
+- Assuming you already have a list of students
+- Assuming you already have a list of courses
+- A student can register to multiple courses
+- A course can have multiple students enrolled in it.
+- A course has 50 students maximum
+- A student can register to 5 course maximum
+
+Provide the following REST API:
+- Create students CRUD
+- Create courses CRUD
+- Create API for students to register to courses
+- Create abilities for user to view all relationships between students and courses
++ Filter all students with a specific course
++ Filter all courses for a specific student
++ Filter all courses without any students
++ Filter all students without any courses
+-----------------------------------------------------------------------
+
+2. Wrap everything in docker-compose and update README.md with following details:
+• Endpoints and payloads
+• How to setup project
+
+3. Technology stack:
+• Java/Groovy
+• Gradle/Maven
+• Spring Boot
+• Docker (docker-compose)
+• JUnit
+• MySQL
+• Other technologies or frameworks which can help you.
+
+4. Provide unit tests at the minimum
+5. Project can be stored under any version control system like GitHub, GitLab etc.
+
+SELECT s FROM Student s WHERE s.courseList IS EMPTY
+
+work time:
+21.12 : 17:40 - 19:55 2h 15m
+21.12 : 21:20 -23:50 2h 30m
+23.12 : 15:25 - 16:10 45m
+23.12 : 16:20 -17:00 40m
+23.12 : 18:15 - 18:40 25m
+23.12 : 19:00 - 19:25 25m
+23.12 : 20:00 - 21:00 1h
+23.12 : 21:15 -22:25 1h 10m
+sum: 9h 15m / 20h
