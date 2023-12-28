@@ -40,7 +40,6 @@ class StudentServiceTest {
         Student student = StudentTestData.testStudent();
         studentService.saveStudent(student);
 
-        Student testStudent = studentService.getStudentByStudentIndex(student.getStudentIndex());
         Student expectedStudent = Student.builder().name("newName").studentIndex(student.getStudentIndex()).surname("newSurname").build();
 
         studentService.modifyStudent(studentTestData.testExpectedStudentDto(student.getStudentIndex()));
