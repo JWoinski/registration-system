@@ -350,9 +350,8 @@ The application will be accessible at http://localhost:8080.
 
 Technologies Used in project:
 Java
-Mavan
+Maven
 Spring Boot
-Docker
 JUnit 5
 MySQL
 Hibernate
