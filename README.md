@@ -1,7 +1,6 @@
-### School Registration System
-                                     
+# School Registration System
 
-#Course Controller API
+## Course Controller API
 
 This api provides endpoints Create, read, update and delete for courses.
 
@@ -56,9 +55,8 @@ Status codes that you can get:
 404 Not Found: Course not found.
 
 ### Modify Course
-
 *Endpoint* 'PUT /courses"
-*Description* Modify an existing course
+*Description* Modify an existing course via courseIndex
 *Request Body* json:
 
 Example:
@@ -108,7 +106,7 @@ Status codes that you can get:
 200 OK: Successful retrieval of the courses.
 404 Not Found: No courses found.
 
-### Filter Controller API
+# Filter Controller API
 
 This API provides endpoints for filtering students and courses based on various criteria
 
@@ -169,8 +167,7 @@ Status codes that you can get:
 200 OK: Successful retrieval of courses.
 404 Not Found: Student not found or no courses enrolled.
 
-
-###Get Students with No Courses
+### Get Students with No Courses
 
 *Endpoint* GET /filters/studentsWithNoCourses
 *Description* Retrieve a list of students not enrolled in any course.
@@ -217,9 +214,7 @@ Status codes that you can get:
 200 OK: Successful retrieval of courses with no students.
 404 Not Found: No courses without students found.
 
-
-### Register API
-
+# Register API
 
 This API provides endpoints for registering students to courses.
 
@@ -246,7 +241,7 @@ Http Status Code that you can get:
 200 OK : Succesful registration of the student to the course
 400 Bad Request: Main reason is occupied Student Index
 
-### Student Controller API
+# Student Controller API
 
 This api provides endpoints Create, read, update and delete for students.
 
@@ -301,7 +296,7 @@ Status codes that you can get:
 ### Modify Student
 
 *Endpoint* 'PUT /student"
-*Description* Modify an existing student
+*Description* Modify an existing student via studentIndex
 *Request Body* json:
 
 Example:
@@ -347,7 +342,7 @@ Status codes that you can get:
 200 OK: Successful retrieval of the courses.
 404 Not Found: No courses found.
 
-How to Run
+## How to Run
 Clone the repository.
 Navigate to the project directory.
 The application will be accessible at http://localhost:8080.
