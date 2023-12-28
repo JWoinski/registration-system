@@ -1,5 +1,6 @@
 package com.school.registrationsystem.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -20,6 +21,7 @@ public class Student {
     private String name;
     private String surname;
     private int studentIndex;
+    @JsonIgnore
     @ManyToMany(mappedBy = "studentList", cascade = {CascadeType.DETACH, CascadeType.PERSIST}, fetch = FetchType.EAGER)
     private List<Course> courseList;
 

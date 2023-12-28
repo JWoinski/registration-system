@@ -23,13 +23,13 @@ public class FilterController {
     private final CourseService courseService;
     private final StudentService studentService;
 
-    @GetMapping("/{courseIndex}")
+    @GetMapping("/courses/{courseIndex}")
     public ResponseEntity<StudentResponse> getStudentsByCourseIndex(@PathVariable int courseIndex) {
         List<Student> studentListByCourseIndex = studentService.getStudentListByCourseIndex(courseIndex);
         return new ResponseEntity<>(new StudentResponse(studentListByCourseIndex), HttpStatus.OK);
     }
 
-    @GetMapping("/{studentIndex}")
+    @GetMapping("/students/{studentIndex}")
     public ResponseEntity<CourseResponse> getCoursesByStudentIndex(@PathVariable int studentIndex) {
         List<Course> courseListByStudentIndex = courseService.getCourseListByStudentIndex(studentIndex);
         return new ResponseEntity<>(new CourseResponse(courseListByStudentIndex), HttpStatus.OK);

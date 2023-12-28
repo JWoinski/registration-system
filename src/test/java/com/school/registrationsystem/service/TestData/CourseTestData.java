@@ -9,12 +9,18 @@ import java.util.List;
 
 @Service
 public class CourseTestData {
+    private static int iter = 1;
+
+    public static int getTestIndex() {
+        iter++;
+        return iter;
+    }
 
     public static Course testCourse() {
 
         return Course.builder()
                 .name("name")
-                .courseIndex(1234)
+                .courseIndex(getTestIndex())
                 .startDate(LocalDate.now())
                 .endDate(LocalDate.now().plusMonths(3))
                 .description("description")
@@ -29,10 +35,10 @@ public class CourseTestData {
         return testCourse;
     }
 
-    public static CourseDto testExpectedCourseDto() {
+    public static CourseDto testExpectedCourseDto(int index) {
         return CourseDto.builder()
                 .name("name")
-                .courseIndex(1234)
+                .courseIndex(index)
                 .startDate(LocalDate.now().minusMonths(1))
                 .endDate(LocalDate.now().plusMonths(5))
                 .description("new")
@@ -43,21 +49,21 @@ public class CourseTestData {
         return List.of(
                 Course.builder()
                         .name("name")
-                        .courseIndex(1234)
+                        .courseIndex(getTestIndex())
                         .startDate(LocalDate.now())
                         .endDate(LocalDate.now().plusMonths(3))
                         .description("description")
                         .build(),
                 Course.builder()
                         .name("name")
-                        .courseIndex(1235)
+                        .courseIndex(getTestIndex())
                         .startDate(LocalDate.now())
                         .endDate(LocalDate.now().plusMonths(3))
                         .description("description")
                         .build(),
                 Course.builder()
                         .name("name")
-                        .courseIndex(1236)
+                        .courseIndex(getTestIndex())
                         .startDate(LocalDate.now())
                         .endDate(LocalDate.now().plusMonths(3))
                         .description("description")
@@ -69,21 +75,21 @@ public class CourseTestData {
         return List.of(
                 Course.builder()
                         .name("name")
-                        .courseIndex(1234)
+                        .courseIndex(getTestIndex())
                         .startDate(LocalDate.now())
                         .endDate(LocalDate.now().plusMonths(3))
                         .description("description")
                         .build(),
                 Course.builder()
                         .name("name")
-                        .courseIndex(1235)
+                        .courseIndex(getTestIndex())
                         .startDate(LocalDate.now())
                         .endDate(LocalDate.now().plusMonths(3))
                         .description("description")
                         .build(),
                 Course.builder()
                         .name("name")
-                        .courseIndex(1236)
+                        .courseIndex(getTestIndex())
                         .startDate(LocalDate.now())
                         .endDate(LocalDate.now().plusMonths(3))
                         .description("description")

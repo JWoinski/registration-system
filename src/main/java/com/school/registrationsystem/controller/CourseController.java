@@ -1,6 +1,7 @@
 package com.school.registrationsystem.controller;
 
 import com.school.registrationsystem.model.dto.CourseDto;
+import com.school.registrationsystem.model.request.IndexRequest;
 import com.school.registrationsystem.model.response.ApiResponse;
 import com.school.registrationsystem.model.response.CourseResponse;
 import com.school.registrationsystem.service.CourseService;
@@ -22,8 +23,8 @@ public class CourseController {
     }
 
     @DeleteMapping
-    public ResponseEntity<ApiResponse> deleteCourse(@RequestBody String courseIndex) {
-        courseService.deleteCourse(courseIndex);
+    public ResponseEntity<ApiResponse> deleteCourse(@RequestBody IndexRequest indexRequest) {
+        courseService.deleteCourse(indexRequest.getIndex());
         return new ResponseEntity<>(new ApiResponse("Course deleted correctly"), HttpStatus.OK);
     }
 

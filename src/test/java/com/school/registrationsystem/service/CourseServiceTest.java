@@ -7,17 +7,18 @@ import com.school.registrationsystem.model.dto.RegisterDto;
 import com.school.registrationsystem.service.TestData.CourseTestData;
 import com.school.registrationsystem.service.TestData.StudentTestData;
 import jakarta.persistence.EntityNotFoundException;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ActiveProfiles;
 
 import java.time.LocalDate;
 import java.util.List;
 
 @SpringBootTest
+@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
 @ActiveProfiles("test")
 class CourseServiceTest {
     @Autowired
@@ -25,22 +26,17 @@ class CourseServiceTest {
     @Autowired
     private StudentService studentService;
 
-    @AfterEach
-    void cleanUp() {
-        studentService.deleteAll();
-        courseService.deleteAll();
-    }
-
     @Test
     void modifyCourse() {
-        courseService.saveCourse(CourseTestData.testCourse());
+        Course course = CourseTestData.testCourse();
+        courseService.saveCourse(course);
 
-        Course testCourse = courseService.getCourseByCourseIndex(CourseTestData.testCourse().getCourseIndex());
+        Course testCourse = courseService.getCourseByCourseIndex(course.getCourseIndex());
         Course expectedCourse = CourseTestData.testExpectedCourse(testCourse);
 
-        courseService.modifyCourse(CourseTestData.testExpectedCourseDto());
+        courseService.modifyCourse(CourseTestData.testExpectedCourseDto(course.getCourseIndex()));
 
-        Course acutalCourse = courseService.getCourseByCourseIndex(1234);
+        Course acutalCourse = courseService.getCourseByCourseIndex(course.getCourseIndex());
 
         Assertions.assertEquals(expectedCourse.getDescription(), acutalCourse.getDescription());
 
@@ -115,7 +111,7 @@ class CourseServiceTest {
         List<Course> courses = CourseTestData.testCourseListWith2EmptyCourses();
         courseService.saveAll(courses);
 
-        studentService.registerStudentToCourse(new RegisterDto(1234, 1236));
+        studentService.registerStudentToCourse(new RegisterDto(student.getStudentIndex(), courses.stream().findFirst().get().getCourseIndex()));
 
         int expected = 2;
         int actual = courseService.getCourseListByEmptyStudentList().size();

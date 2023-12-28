@@ -1,9 +1,13 @@
 package com.school.registrationsystem.service;
 
+import com.school.registrationsystem.exception.CourseDateException;
 import com.school.registrationsystem.model.Course;
+import com.school.registrationsystem.model.Student;
 import com.school.registrationsystem.model.dto.CourseDto;
 import com.school.registrationsystem.repository.CourseRepostiory;
+import com.school.registrationsystem.repository.StudentRepository;
 import jakarta.persistence.EntityNotFoundException;
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -13,24 +17,44 @@ import java.util.List;
 @RequiredArgsConstructor
 public class CourseService {
     private final CourseRepostiory courseRepostiory;
+    private final StudentRepository studentRepository;
 
     public void saveCourse(CourseDto courseDto) {
+        Course course = Course.builder()
+                .name(courseDto.getName())
+                .courseIndex(courseDto.getCourseIndex())
+                .startDate(courseDto.getStartDate())
+                .endDate(courseDto.getEndDate())
+                .description(courseDto.getDescription())
+                .build();
+
+        validateDate(course);
+
         courseRepostiory.save(
-                Course.builder()
-                        .name(courseDto.getName())
-                        .courseIndex(courseDto.getCourseIndex())
-                        .startDate(courseDto.getStartDate())
-                        .endDate(courseDto.getEndDate())
-                        .description(courseDto.getDescription())
-                        .build());
+                course);
+    }
+
+    private void validateDate(Course course) {
+        if (course.getStartDate().isAfter(course.getEndDate())) {
+            throw new CourseDateException("Start date is after end date.");
+        }
     }
 
     public void saveCourse(Course course) {
+        validateDate(course);
         courseRepostiory.save(course);
     }
 
-    public void deleteCourse(String courseName) {
-        courseRepostiory.deleteByName(courseName);
+    @Transactional
+    public void deleteCourse(int courseIndex) {
+        Course byCourseIndex = courseRepostiory.findByCourseIndex(courseIndex);
+        if (byCourseIndex != null) {
+            for (Student student : byCourseIndex.getStudentList()) {
+                student.getCourseList().remove(byCourseIndex);
+                studentRepository.save(student);
+            }
+        }
+        courseRepostiory.deleteByCourseIndex(courseIndex);
     }
 
     public void modifyCourse(CourseDto courseDto) {
@@ -42,6 +66,7 @@ public class CourseService {
             throw new EntityNotFoundException("Course has been not found.");
         }
         updateCourseValues(course, courseDto);
+        validateDate(course);
         courseRepostiory.save(course);
     }
 
@@ -74,9 +99,5 @@ public class CourseService {
 
     private boolean validCourseDto(CourseDto courseDto) {
         return courseDto.getName() == null || courseDto.getStartDate() == null || courseDto.getEndDate() == null || courseDto.getDescription() == null || courseDto.getCourseIndex() == 0;
-    }
-
-    public void deleteAll() {
-        courseRepostiory.deleteAll();
     }
 }

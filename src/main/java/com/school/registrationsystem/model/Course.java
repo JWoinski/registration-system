@@ -23,6 +23,6 @@ public class Course {
     private LocalDate startDate;
     private LocalDate endDate;
     private String description;
-    @ManyToMany(cascade = CascadeType.ALL, fetch = FetchType.EAGER)
+    @ManyToMany(cascade = {CascadeType.DETACH, CascadeType.PERSIST}, fetch = FetchType.EAGER)
     private List<Student> studentList;
 }

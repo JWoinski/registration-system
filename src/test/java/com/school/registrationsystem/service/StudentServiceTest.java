@@ -10,11 +10,11 @@ import com.school.registrationsystem.model.dto.StudentDto;
 import com.school.registrationsystem.service.TestData.CourseTestData;
 import com.school.registrationsystem.service.TestData.StudentTestData;
 import jakarta.persistence.EntityNotFoundException;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ActiveProfiles;
 
 import java.time.LocalDate;
@@ -25,6 +25,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 @ActiveProfiles("test")
+@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
 @SpringBootTest
 class StudentServiceTest {
     @Autowired
@@ -34,12 +35,6 @@ class StudentServiceTest {
     @Autowired
     private CourseService courseService;
 
-    @AfterEach
-    void cleanUp() {
-        studentService.deleteAll();
-        courseService.deleteAll();
-    }
-
     @Test
     void modifyStudent() {
         Student student = StudentTestData.testStudent();
@@ -48,14 +43,14 @@ class StudentServiceTest {
         Student testStudent = studentService.getStudentByStudentIndex(student.getStudentIndex());
         Student expectedStudent = studentService.testExpectedStudent(testStudent);
 
-        studentService.modifyStudent(studentTestData.testExpectedStudentDto());
-        Student actualStudent = studentService.getStudentByStudentIndex(1234);
+        studentService.modifyStudent(studentTestData.testExpectedStudentDto(student.getStudentIndex()));
+        Student actualStudent = studentService.getStudentByStudentIndex(student.getStudentIndex());
 
-        Assertions.assertEquals(expectedStudent.getSurname(), actualStudent.getSurname());
+        assertEquals(expectedStudent.getSurname(), actualStudent.getSurname());
 
-        Assertions.assertEquals(expectedStudent.getName(), actualStudent.getName());
+        assertEquals(expectedStudent.getName(), actualStudent.getName());
 
-        Assertions.assertEquals(expectedStudent.getStudentIndex(), actualStudent.getStudentIndex());
+        assertEquals(expectedStudent.getStudentIndex(), actualStudent.getStudentIndex());
     }
 
     @Test
@@ -74,7 +69,7 @@ class StudentServiceTest {
         studentService.saveAll(studentList);
         int expected = 2;
         int actual = studentService.getAll().size();
-        Assertions.assertEquals(expected, actual);
+        assertEquals(expected, actual);
     }
 
     @Test
@@ -87,7 +82,7 @@ class StudentServiceTest {
 
         studentService.registerStudentToCourse(new RegisterDto(student.getStudentIndex(), course.getCourseIndex()));
 
-        Student updatedStudent = studentService.getStudentByStudentIndex(1234);
+        Student updatedStudent = studentService.getStudentByStudentIndex(student.getStudentIndex());
         assertNotNull(updatedStudent.getCourseList(), "Student list in the course should not be null");
 
         assertEquals(1, updatedStudent.getCourseList().size(), "Incorrect number of students in the course");
@@ -142,7 +137,7 @@ class StudentServiceTest {
 
         List<Student> students = new ArrayList<>();
         for (int i = 1; i <= 50; i++) {
-            Student student = Student.builder().name("name").surname("surname").studentIndex(i).build();
+            Student student = StudentTestData.testStudent();
             studentService.saveStudent(student);
             students.add(student);
         }
@@ -193,7 +188,7 @@ class StudentServiceTest {
 
         studentService.registerStudentToCourse(new RegisterDto(student.getStudentIndex(), course.getCourseIndex()));
         Integer actual = studentService.getStudentListByCourseIndex(course.getCourseIndex()).stream().map(Student::getStudentIndex).findFirst().get();
-        Assertions.assertEquals(student.getStudentIndex(), actual);
+        assertEquals(student.getStudentIndex(), actual);
     }
 
     @Test
@@ -219,6 +214,6 @@ class StudentServiceTest {
 
         studentService.registerStudentToCourse(new RegisterDto(student1.getStudentIndex(), course.getCourseIndex()));
 
-        Assertions.assertEquals(1, studentService.getStudentByEmptyCourseList().size());
+        assertEquals(1, studentService.getStudentByEmptyCourseList().size());
     }
 }

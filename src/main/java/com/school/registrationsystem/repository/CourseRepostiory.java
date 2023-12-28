@@ -10,8 +10,6 @@ import java.util.List;
 
 @Repository
 public interface CourseRepostiory extends JpaRepository<Course, Integer> {
-    void deleteByName(String courseName);
-
     Course findByCourseIndex(int courseIndex);
 
     @Query("SELECT c FROM Course c JOIN c.studentList s WHERE s.studentIndex = :studentIndex")
@@ -24,4 +22,5 @@ public interface CourseRepostiory extends JpaRepository<Course, Integer> {
             "FROM Course c JOIN c.studentList s WHERE c.courseIndex = :courseIndex")
     boolean isCourseHaveNot50Students(@Param("courseIndex") int courseIndex);
 
+    void deleteByCourseIndex(int courseIndex);
 }

@@ -30,4 +30,9 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ApiError> handleTimeOutCourseRegisterException(CapacityException e) {
         return new ResponseEntity<>(new ApiError(e.getMessage()), HttpStatus.BAD_REQUEST);
     }
+
+    @ExceptionHandler(CourseDateException.class)
+    public ResponseEntity<ApiError> handleCourseDateException(CourseDateException e) {
+        return new ResponseEntity<>(new ApiError(e.getMessage()), HttpStatus.BAD_REQUEST);
+    }
 }

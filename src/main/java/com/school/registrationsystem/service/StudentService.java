@@ -46,7 +46,15 @@ public class StudentService {
         }
     }
 
+    @Transactional
     public void deleteStudent(int studentIndex) {
+        Student byStudentIndex = studentRepository.findByStudentIndex(studentIndex);
+        if (byStudentIndex != null) {
+            for (Course course : byStudentIndex.getCourseList()) {
+                course.getStudentList().remove(byStudentIndex);
+                courseRepostiory.save(course);
+            }
+        }
         studentRepository.deleteByStudentIndex(studentIndex);
     }
 
@@ -128,9 +136,5 @@ public class StudentService {
 
     public void saveAll(List<Student> studentList) {
         studentRepository.saveAll(studentList);
-    }
-
-    public void deleteAll() {
-        studentRepository.deleteAll();
     }
 }

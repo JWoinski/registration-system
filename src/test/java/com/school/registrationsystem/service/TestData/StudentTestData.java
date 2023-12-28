@@ -8,16 +8,23 @@ import java.util.List;
 
 @Service
 public class StudentTestData {
+    private static int iter = 100;
+
+    private static int getTestIndex() {
+        iter++;
+        return iter;
+    }
+
     public static List<Student> testStudentList() {
         return List.of(Student.builder()
                         .name("name")
                         .surname("surname")
-                        .studentIndex(1234)
+                        .studentIndex(getTestIndex())
                         .build(),
                 Student.builder()
                         .name("name")
                         .surname("surname")
-                        .studentIndex(1235)
+                        .studentIndex(getTestIndex())
                         .build()
 
         );
@@ -27,14 +34,14 @@ public class StudentTestData {
         return Student.builder()
                 .name("name")
                 .surname("surname")
-                .studentIndex(1234)
+                .studentIndex(getTestIndex())
                 .build();
     }
 
-    public StudentDto testExpectedStudentDto() {
+    public StudentDto testExpectedStudentDto(int index) {
         return StudentDto.builder()
                 .name("newName")
-                .studentIndex(1234)
+                .studentIndex(index)
                 .surname("newSurname")
                 .build();
     }
