@@ -41,7 +41,9 @@ Status codes that you can get:
 *Description* delete a cours by its index
 *Request Body* json :
 
-"123"
+{
+  "index" : 123
+}
 
 Response that you get is:
 {
@@ -282,7 +284,9 @@ Status codes that you can get:
 *Description* delete a student by its index
 *Request Body* json :
 
-"1234"
+{
+  "index" : 1234
+}
 
 Response that you get is:
 {
@@ -346,9 +350,6 @@ Status codes that you can get:
 How to Run
 Clone the repository.
 Navigate to the project directory.
-
-// Wait for docker
-
 The application will be accessible at http://localhost:8080.
 
 
