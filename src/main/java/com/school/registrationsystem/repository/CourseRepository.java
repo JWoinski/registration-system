@@ -9,7 +9,7 @@ import org.springframework.stereotype.Repository;
 import java.util.List;
 
 @Repository
-public interface CourseRepostiory extends JpaRepository<Course, Integer> {
+public interface CourseRepository extends JpaRepository<Course, Integer> {
     Course findByCourseIndex(int courseIndex);
 
     @Query("SELECT c FROM Course c JOIN c.studentList s WHERE s.studentIndex = :studentIndex")
