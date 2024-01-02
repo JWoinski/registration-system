@@ -55,6 +55,9 @@ Status codes that you can get:
 404 Not Found: Course not found.
 
 ### Modify Course
+*Endpoint* 'PUT /courses"
+*Description* Modify an existing course via courseIndex
+*Request Body* json:
 
 *Endpoint* `PUT /courses`<br>
 *Description* Modify an existing course via courseIndex<br>
@@ -209,7 +212,7 @@ Status codes that you can get:
 
 Status codes that you can get:
 
-200 OK: Successful retrieval of courses with no students.<br>
+200 OK: Successful retrieval of courses with no students.
 404 Not Found: No courses without students found.
 
 # Register API
