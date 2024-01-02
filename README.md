@@ -174,14 +174,13 @@ Status codes that you can get:
 *Endpoint* `GET /filters/studentsWithNoCourses`<br>
 *Description* Retrieve a list of students not enrolled in any course.<br>
 *Response example*<br><br>
-{
-  "students": [
 {<br>
+"students": [{<br><br>
 "studentId": 2,<br>
 "name": "Jane",<br>
 "surname": "Smith",<br>
 "studentIndex": 67890<br>
-},<br>
+},<br><br>
     // ... more students ...
   ]
 }
@@ -197,15 +196,15 @@ Status codes that you can get:
 *Description* Retrieve a list of courses with no enrolled students.<br><br>
 *Response json example:*<br>
 
-{
-  "courses": [
 {<br>
+  "courses": [
+{<br><br>
 "courseId": 2,<br>
 "name": "Physics",<br>
 "courseIndex": 102,<br>
 "startDate": "2023-02-01",<br>
 "endDate": "2023-07-31"<br>
-},<br>
+},<br><br>
     // ... more courses ...
   ]
 }
