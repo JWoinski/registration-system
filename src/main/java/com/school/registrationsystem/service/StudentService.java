@@ -58,7 +58,7 @@ public class StudentService {
             //Save the student to the repository
             studentRepository.save(student);
         } else {
-            //Throw and exception if the student inde is already in use
+            //Throw and exception if the student index is already in use
             throw new IndexOccupiedException(student.getStudentIndex() + " is in use!");
         }
     }

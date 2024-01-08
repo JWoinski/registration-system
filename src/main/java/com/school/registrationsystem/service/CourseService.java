@@ -26,6 +26,9 @@ public class CourseService {
      * @param courseDto Object containing course details used to create a new Course object.
      */
     public void saveCourse(CourseDto courseDto) {
+        if (validCourseDto(courseDto)) {
+            throw new NullPointerException("Course form is incorrect.");
+        }
         //Create Course from CourseDto details
         Course course = Course.builder()
                 .name(courseDto.getName())
