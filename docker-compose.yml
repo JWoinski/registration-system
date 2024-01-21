@@ -7,15 +7,15 @@ services:
     restart: always
     build: docker
     ports:
-      - "8080:8080"
+      - "8000:8080"
     environment:
       MYSQL_HOST: mysqldb
       MYSQL_USER: root
       MYSQL_PASSWORD: rootroot#123
 
   mysqldb:
-    container_name: mysqldb
-    image: mysql
+    container_name: springapi
+    image: springapi
     volumes:
       - C:\ProgramData\MySQL\MySQL Server 8.1\Data
     ports:

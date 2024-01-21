@@ -1,218 +1,125 @@
 package com.school.registrationsystem.service;
 
-import com.school.registrationsystem.exception.CapacityException;
-import com.school.registrationsystem.exception.DuplicateEnrollmentException;
-import com.school.registrationsystem.exception.TimeOutCourseRegisterException;
-import com.school.registrationsystem.model.Course;
 import com.school.registrationsystem.model.Student;
-import com.school.registrationsystem.model.dto.RegisterDto;
 import com.school.registrationsystem.model.dto.StudentDto;
-import com.school.registrationsystem.service.TestData.CourseTestData;
-import com.school.registrationsystem.service.TestData.StudentTestData;
+import com.school.registrationsystem.repository.CourseRepository;
+import com.school.registrationsystem.repository.StudentRepository;
 import jakarta.persistence.EntityNotFoundException;
+import lombok.RequiredArgsConstructor;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.test.annotation.DirtiesContext;
+import org.mockito.Mock;
+import org.mockito.Mockito;
+import org.mockito.MockitoAnnotations;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.test.context.ActiveProfiles;
 
-import java.time.LocalDate;
 import java.util.ArrayList;
-import java.util.List;
+import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.Mockito.eq;
+import static org.mockito.Mockito.when;
 
 @ActiveProfiles("test")
-@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
-@SpringBootTest
+@RequiredArgsConstructor
 class StudentServiceTest {
-    @Autowired
+    //    private final StudentTestData studentTestData;
+//    private final CourseTestData courseTestData;
     private StudentService studentService;
-    @Autowired
-    private StudentTestData studentTestData;
-    @Autowired
-    private CourseService courseService;
+    @Mock
+    private CourseRepository courseRepository;
+    @Mock
+    private StudentRepository studentRepository;
+
+    @BeforeEach
+    public void setUp() {
+        MockitoAnnotations.initMocks(this);
+        studentService = new StudentService(studentRepository, courseRepository);
+    }
+
+    @Test
+    void initalizeStudent_nullValues() {
+        assertThrows(NullPointerException.class, () -> StudentDto.builder().name(null).surname("surname").build());
+        assertThrows(NullPointerException.class, () -> StudentDto.builder().name("name").surname(null).build());
+    }
 
     @Test
     void modifyStudent() {
-        Student student = StudentTestData.testStudent();
-        studentService.saveStudent(student);
+        int studentId = 1;
+        StudentDto modifiedStudentDto = new StudentDto();
+        modifiedStudentDto.setName("Modified name");
+        modifiedStudentDto.setSurname("Modified surname");
 
-        Student expectedStudent = Student.builder().name("newName").studentIndex(student.getStudentIndex()).surname("newSurname").build();
+        Student existingStudent = new Student();
+        existingStudent.setStudentId(studentId);
 
-        studentService.modifyStudent(studentTestData.testExpectedStudentDto(student.getStudentIndex()));
-        Student actualStudent = studentService.getStudentByStudentIndex(student.getStudentIndex());
+        when(studentRepository.findById(studentId)).thenReturn(Optional.of(existingStudent));
 
-        assertEquals(expectedStudent.getSurname(), actualStudent.getSurname());
+        studentService.modifyStudent(modifiedStudentDto, studentId);
 
-        assertEquals(expectedStudent.getName(), actualStudent.getName());
-
-        assertEquals(expectedStudent.getStudentIndex(), actualStudent.getStudentIndex());
+        assertEquals("Modified name", existingStudent.getName());
+        assertEquals("Modified surname", existingStudent.getSurname());
     }
 
     @Test
-    void modifyNullStudentIndex() {
-        Assertions.assertThrows(EntityNotFoundException.class, () -> studentService.modifyStudent(new StudentDto("name", "surname", 1)));
+    void modifyStudent_nullStudent() {
+        int studentId = 1;
+        StudentDto modifiedStudentDto = new StudentDto();
+        modifiedStudentDto.setName("Modified name");
+        modifiedStudentDto.setSurname("Modified surname");
+
+        Student existingStudent = new Student();
+        existingStudent.setStudentId(studentId);
+
+        when(studentRepository.findById(studentId)).thenReturn(Optional.empty());
+        Assertions.assertThrows(EntityNotFoundException.class, () -> studentService.modifyStudent(modifiedStudentDto, studentId));
     }
 
     @Test
-    void modifyNullStudentDto() {
-        Assertions.assertThrows(NullPointerException.class, () -> studentService.modifyStudent(new StudentDto()));
+    void getAllStudents() {
+        Integer courseId = null;
+        Boolean withoutCourses = null;
+        Pageable pageable = Pageable.unpaged();
+        Page<Student> expectedPage = new PageImpl<>(new ArrayList<>());
+
+        when(studentRepository.findAll(Mockito.any(Specification.class), eq(pageable))).thenReturn(expectedPage);
+
+        Page<Student> resultPage = studentService.getAll(courseId, withoutCourses, pageable);
+
+        assertEquals(expectedPage, resultPage);
     }
 
     @Test
-    void getAll() {
-        List<Student> studentList = StudentTestData.testStudentList();
-        studentService.saveAll(studentList);
-        int expected = 2;
-        int actual = studentService.getAll().size();
-        assertEquals(expected, actual);
+    void getAllStudentsByCourseId() {
+        Integer courseId = 1;
+        Boolean withoutCourses = null;
+        Pageable pageable = Pageable.unpaged();
+        Page<Student> expectedPage = new PageImpl<>(new ArrayList<>());
+
+        when(studentRepository.findAll(Mockito.any(Specification.class), eq(pageable))).thenReturn(expectedPage);
+
+        Page<Student> resultPage = studentService.getAll(courseId, withoutCourses, pageable);
+
+        assertEquals(expectedPage, resultPage);
     }
 
     @Test
-    void registerStudentToCourse() {
-        Student student = StudentTestData.testStudent();
-        studentService.saveStudent(student);
+    void getAllStudentsWithoutCourses() {
+        Integer courseId = null;
+        Boolean withoutCourses = true;
+        Pageable pageable = Pageable.unpaged();
+        Page<Student> expectedPage = new PageImpl<>(new ArrayList<>());
 
-        Course course = CourseTestData.testCourse();
-        courseService.saveCourse(course);
+        when(studentRepository.findAll(Mockito.any(Specification.class), eq(pageable))).thenReturn(expectedPage);
 
-        studentService.registerStudentToCourse(new RegisterDto(student.getStudentIndex(), course.getCourseIndex()));
+        Page<Student> resultPage = studentService.getAll(courseId, withoutCourses, pageable);
 
-        Student updatedStudent = studentService.getStudentByStudentIndex(student.getStudentIndex());
-        assertNotNull(updatedStudent.getCourseList(), "Student list in the course should not be null");
-
-        assertEquals(1, updatedStudent.getCourseList().size(), "Incorrect number of students in the course");
-    }
-
-    @Test
-    void registerStudentToCourse_shouldThrowDuplcateException() {
-        Student student = StudentTestData.testStudent();
-        studentService.saveStudent(student);
-
-        Course course = CourseTestData.testCourse();
-        courseService.saveCourse(course);
-
-        studentService.registerStudentToCourse(new RegisterDto(student.getStudentIndex(), course.getCourseIndex()));
-
-        Assertions.assertThrows(DuplicateEnrollmentException.class, () -> studentService.registerStudentToCourse(new RegisterDto(student.getStudentIndex(), course.getCourseIndex())));
-    }
-
-    @Test
-    void registerStudentToCourse_shouldThrowEntityNotFoundException() {
-        Student student = StudentTestData.testStudent();
-        studentService.saveStudent(student);
-
-        Course course = CourseTestData.testCourse();
-        courseService.saveCourse(course);
-
-        Assertions.assertThrows(EntityNotFoundException.class, () -> studentService.registerStudentToCourse(new RegisterDto(student.getStudentIndex(), 1)));
-    }
-
-    @Test
-    void registerStudentToCourse_shouldTimeOutCourseRegisterException() {
-        Student student = StudentTestData.testStudent();
-        studentService.saveStudent(student);
-
-        Course course = Course.builder().name("name").startDate(LocalDate.now().minusMonths(2)).endDate(LocalDate.now().minusMonths(1)).description("description").build();
-        courseService.saveCourse(course);
-
-        Assertions.assertThrows(TimeOutCourseRegisterException.class, () -> studentService.registerStudentToCourse(new RegisterDto(student.getStudentIndex(), course.getCourseIndex())));
-    }
-
-
-    @Test
-    void registerStudentToCourse_shouldNotRegisterCauseMax50StudentsPer1Course() {
-        Course course = Course.builder()
-                .name("name")
-                .startDate(LocalDate.now())
-                .endDate(LocalDate.now().plusMonths(1))
-                .courseIndex(1)
-                .description("description")
-                .build();
-        courseService.saveCourse(course);
-
-        List<Student> students = new ArrayList<>();
-        for (int i = 1; i <= 50; i++) {
-            Student student = StudentTestData.testStudent();
-            studentService.saveStudent(student);
-            students.add(student);
-        }
-
-        for (Student student : students) {
-            studentService.registerStudentToCourse(new RegisterDto(student.getStudentIndex(), course.getCourseIndex()));
-        }
-
-        Student student51 = StudentTestData.testStudent();
-        studentService.saveStudent(student51);
-        Assertions.assertThrows(CapacityException.class, () -> studentService.registerStudentToCourse(new RegisterDto(student51.getStudentIndex(), course.getCourseIndex())));
-    }
-
-    @Test
-    void registerStudentToCourse_shouldNotRegisterCauseMax5CoursePer1Student() {
-        Student student = StudentTestData.testStudent();
-        studentService.saveStudent(student);
-
-        List<Course> courses = new ArrayList<>();
-
-        for (int i = 1; i <= 6; i++) {
-            Course course = Course.builder()
-                    .name("name")
-                    .startDate(LocalDate.now())
-                    .endDate(LocalDate.now().plusMonths(1))
-                    .courseIndex(i)
-                    .description("description")
-                    .build();
-            courses.add(course);
-            courseService.saveCourse(course);
-        }
-
-        for (int i = 0; i < 5; i++) {
-            studentService.registerStudentToCourse(new RegisterDto(student.getStudentIndex(), courses.get(i).getCourseIndex()));
-        }
-
-        Assertions.assertThrows(CapacityException.class, () -> studentService.registerStudentToCourse(new RegisterDto(student.getStudentIndex(), courses.get(5).getCourseIndex())));
-    }
-
-    @Test
-    void getStudentListByCourseIndexTest() {
-        Student student = StudentTestData.testStudent();
-        studentService.saveStudent(student);
-
-        Course course = CourseTestData.testCourse();
-        courseService.saveCourse(course);
-
-
-        studentService.registerStudentToCourse(new RegisterDto(student.getStudentIndex(), course.getCourseIndex()));
-        Integer actual = studentService.getStudentListByCourseIndex(course.getCourseIndex()).stream().map(Student::getStudentIndex).findFirst().get();
-        assertEquals(student.getStudentIndex(), actual);
-    }
-
-    @Test
-    void getStudentListByCourseIndexTest_shouldThrowException() {
-        Student student = StudentTestData.testStudent();
-        studentService.saveStudent(student);
-
-        Course course = CourseTestData.testCourse();
-        courseService.saveCourse(course);
-
-        Assertions.assertThrows(EntityNotFoundException.class, () -> studentService.registerStudentToCourse(new RegisterDto(student.getStudentIndex(), 1)));
-    }
-
-    @Test
-    void getStudentByEmptyCourseList() {
-        Student student1 = Student.builder().name("name").studentIndex(1234).surname("surname").build();
-        Student student2 = Student.builder().name("name").studentIndex(1235).surname("surname").build();
-        studentService.saveStudent(student1);
-        studentService.saveStudent(student2);
-
-        Course course = CourseTestData.testCourse();
-        courseService.saveCourse(course);
-
-        studentService.registerStudentToCourse(new RegisterDto(student1.getStudentIndex(), course.getCourseIndex()));
-
-        assertEquals(1, studentService.getStudentByEmptyCourseList().size());
+        assertEquals(expectedPage, resultPage);
     }
 }

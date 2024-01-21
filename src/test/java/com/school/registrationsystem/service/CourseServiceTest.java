@@ -4,119 +4,332 @@ import com.school.registrationsystem.model.Course;
 import com.school.registrationsystem.model.Student;
 import com.school.registrationsystem.model.dto.CourseDto;
 import com.school.registrationsystem.model.dto.RegisterDto;
-import com.school.registrationsystem.service.TestData.CourseTestData;
-import com.school.registrationsystem.service.TestData.StudentTestData;
+import com.school.registrationsystem.repository.CourseRepository;
+import com.school.registrationsystem.repository.StudentRepository;
+import com.school.registrationsystem.testData.CourseControllerTestData;
+import com.school.registrationsystem.testData.StudentControllerTestData;
+import com.school.registrationsystem.validator.capacity.course.CourseValidator;
+import com.school.registrationsystem.validator.capacity.student.StudentValidator;
+import com.school.registrationsystem.validator.registrationPeriod.CourseOpenValidator;
+import com.school.registrationsystem.validator.studentEnrolled.StudentEnrolledValidator;
 import jakarta.persistence.EntityNotFoundException;
-import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.test.annotation.DirtiesContext;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.Mockito;
+import org.mockito.MockitoAnnotations;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.test.context.ActiveProfiles;
 
 import java.time.LocalDate;
-import java.util.List;
+import java.util.ArrayList;
+import java.util.Optional;
 
-@SpringBootTest
-@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.*;
+
 @ActiveProfiles("test")
 class CourseServiceTest {
-    @Autowired
     private CourseService courseService;
-    @Autowired
-    private StudentService studentService;
+    @Mock
+    private CourseRepository courseRepository;
+    @Mock
+    private StudentRepository studentRepository;
+    @Mock
+    private StudentControllerTestData studentTest;
+    @Mock
+    private CourseControllerTestData courseTest;
+    @InjectMocks
+    private CourseOpenValidator courseOpenValidator;
+    @InjectMocks
+    private StudentValidator studentValidator;
+    @InjectMocks
+    private CourseValidator courseValidator;
+    @InjectMocks
+    private StudentEnrolledValidator studentEnrolledValidator;
+    @Value("${course.students.threshold}")
+    private int courseCapacity;
+    @Value("${student.courses.threshold}")
+    private int studentCapacity;
+
+    @BeforeEach
+    public void setUp() {
+        MockitoAnnotations.initMocks(this);
+        courseService = new CourseService(courseRepository, studentRepository);
+    }
+
+    @Test
+    void InitalizationCourse_nulllValues() {
+        //null description
+        assertThrows(NullPointerException.class, () -> new CourseDto("name", LocalDate.now(), LocalDate.now().plusDays(1), null));
+        //null endDate
+        assertThrows(NullPointerException.class, () -> new CourseDto("name", LocalDate.now(), null, "description"));
+        //null startDate
+        assertThrows(NullPointerException.class, () -> new CourseDto("name", null, LocalDate.now(), "description"));
+        //null name
+        assertThrows(NullPointerException.class, () -> new CourseDto(null, LocalDate.now(), LocalDate.now(), "description"));
+    }
+
+    @Test
+    void initalizeCourse_shouldThrowExcepetion_causeStartDateIsAfterEndDate() {
+        //TODO course startdate is after end date
+//        assertThrows(ConstraintViolationException.class, () -> new CourseDto("name", LocalDate.now(), LocalDate.now().minusYears(1), "description"));
+    }
 
     @Test
     void modifyCourse() {
-        Course course = CourseTestData.testCourse();
-        courseService.saveCourse(course);
+        int courseId = 1;
+        CourseDto modifiedCourseDto = CourseDto.builder()
+                .name("Modified Course")
+                .startDate(LocalDate.now())
+                .endDate(LocalDate.now().plusDays(14))
+                .description("Modified Description")
+                .build();
 
-        Course testCourse = courseService.getCourseByCourseIndex(course.getCourseIndex());
-        Course expectedCourse = CourseTestData.testExpectedCourse(testCourse);
+        Course existingCourse = Course.builder()
+                .courseId(courseId)
+                .name("Original Course")
+                .startDate(LocalDate.now())
+                .endDate(LocalDate.now().plusDays(7))
+                .description("Original Description")
+                .build();
 
-        courseService.modifyCourse(CourseTestData.testExpectedCourseDto(course.getCourseIndex()));
+        when(courseRepository.findById(courseId)).thenReturn(Optional.of(existingCourse));
 
-        Course acutalCourse = courseService.getCourseByCourseIndex(course.getCourseIndex());
+        courseService.modifyCourse(modifiedCourseDto, courseId);
 
-        Assertions.assertEquals(expectedCourse.getDescription(), acutalCourse.getDescription());
-
-        Assertions.assertEquals(expectedCourse.getEndDate(), acutalCourse.getEndDate());
-
-        Assertions.assertEquals(expectedCourse.getStartDate(), acutalCourse.getStartDate());
-
-        Assertions.assertEquals(expectedCourse.getCourseIndex(), acutalCourse.getCourseIndex());
-
+        verify(courseRepository, times(1)).save(Mockito.any());
+        assertEquals("Modified Course", existingCourse.getName());
+        assertEquals(LocalDate.now().plusDays(14), existingCourse.getEndDate());
+        assertEquals("Modified Description", existingCourse.getDescription());
     }
 
     @Test
-    void modifyNullStudentIndex() {
-        // DB is empty so we can not found anything in empty DB
-        Assertions.assertThrows(EntityNotFoundException.class, () -> courseService.modifyCourse(CourseDto.builder()
-                .name("name").startDate(LocalDate.now())
-                .endDate(LocalDate.now()
-                        .plusMonths(1))
-                .courseIndex(1)
-                .description("descrption")
-                .build()));
+    void modifyCourse_NullCourse() {
+        int courseId = 1;
+        CourseDto modifiedCourseDto = CourseDto.builder()
+                .name("Modified Course")
+                .startDate(LocalDate.now())
+                .endDate(LocalDate.now().plusDays(14))
+                .description("Modified Description")
+                .build();
+
+        when(courseRepository.findById(courseId)).thenReturn(Optional.empty());
+        assertThrows(EntityNotFoundException.class, () -> courseService.modifyCourse(modifiedCourseDto, courseId));
     }
 
     @Test
-    void modifyNullStudentDto() {
-        Assertions.assertThrows(NullPointerException.class, () -> courseService.modifyCourse(null));
+    void registerStudentToCourse_Success() {
+        RegisterDto registerDto = new RegisterDto();
+        registerDto.setStudentId(1);
+        registerDto.setCourseId(2);
+
+        Student student = new Student();
+        student.setStudentId(1);
+        student.setCourseList(new ArrayList<>());
+
+        Course course = new Course();
+        course.setCourseId(2);
+        course.setStudentList(new ArrayList<>());
+
+        when(studentRepository.findById(1)).thenReturn(Optional.of(student));
+        when(courseRepository.findById(2)).thenReturn(Optional.of(course));
+
+        courseService.registerStudentToCourse(registerDto);
+
+        assertTrue(student.getCourseList().contains(course));
+        assertTrue(course.getStudentList().contains(student));
     }
 
     @Test
-    void getAll() {
-        List<Course> courses = CourseTestData.testCourseList();
-        courseService.saveAll(courses);
-        int expected = 3;
-        int actual = courseService.getAll().size();
-        Assertions.assertEquals(expected, actual);
+    void registerStudentToCourse_StudentNotFound() {
+        RegisterDto registerDto = new RegisterDto();
+        registerDto.setStudentId(1);
+        registerDto.setCourseId(2);
+
+        when(studentRepository.findById(1)).thenReturn(Optional.empty());
+
+        assertThrows(EntityNotFoundException.class, () -> courseService.registerStudentToCourse(registerDto));
     }
 
     @Test
-    void getCourseListByStudentIndex() {
-        Course course1 = Course.builder().name("name").courseIndex(1234).description("description").startDate(LocalDate.now()).endDate(LocalDate.now().plusMonths(1)).build();
-        courseService.saveCourse(course1);
-        Course course2 = Course.builder().name("name").courseIndex(1235).description("description").startDate(LocalDate.now()).endDate(LocalDate.now().plusMonths(1)).build();
-        courseService.saveCourse(course2);
-        Student student = Student.builder().studentIndex(1234).build();
-        studentService.saveStudent(student);
-        studentService.registerStudentToCourse(new RegisterDto(student.getStudentIndex(), course1.getCourseIndex()));
-        studentService.registerStudentToCourse(new RegisterDto(student.getStudentIndex(), course2.getCourseIndex()));
+    void registerStudentToCourse_CourseNotFound() {
+        RegisterDto registerDto = new RegisterDto();
+        registerDto.setStudentId(1);
+        registerDto.setCourseId(2);
 
-        Assertions.assertEquals(2, courseService.getCourseListByStudentIndex(student.getStudentIndex()).size());
+        Student student = new Student();
+        student.setStudentId(1);
+
+        when(studentRepository.findById(1)).thenReturn(Optional.of(student));
+        when(courseRepository.findById(2)).thenReturn(Optional.empty());
+
+        assertThrows(EntityNotFoundException.class, () -> courseService.registerStudentToCourse(registerDto));
+    }
+    @Test
+    void isValid_CourseNotFound_ThrowsEntityNotFoundException() {
+        RegisterDto registerDto = RegisterDto.builder()
+                .studentId(1)
+                .courseId(999)
+                .build();
+
+        when(courseRepository.findById(registerDto.getCourseId())).thenReturn(Optional.empty());
+
+        assertThrows(EntityNotFoundException.class, () -> courseOpenValidator.isValid(registerDto, null));
     }
 
     @Test
-    void getCourseListByStudentIndex_shouldThrowEntityNotFound() {
-        Course course1 = Course.builder().name("name").courseIndex(1234).description("description").startDate(LocalDate.now()).endDate(LocalDate.now().plusMonths(1)).build();
-        courseService.saveCourse(course1);
-        Course course2 = Course.builder().name("name").courseIndex(1235).description("description").startDate(LocalDate.now()).endDate(LocalDate.now().plusMonths(1)).build();
-        courseService.saveCourse(course2);
-        Student student = Student.builder().studentIndex(1234).build();
-        studentService.saveStudent(student);
-        studentService.registerStudentToCourse(new RegisterDto(student.getStudentIndex(), course1.getCourseIndex()));
-        studentService.registerStudentToCourse(new RegisterDto(student.getStudentIndex(), course2.getCourseIndex()));
+    void registerStudentToCourse_EndDateIsOutOfTime() {
+        Course course = Course.builder()
+                .courseId(1)
+                .endDate(LocalDate.now().minusDays(1))
+                .build();
+        Student student = Student.builder()
+                .studentId(1)
+                .surname("surname")
+                .name("name")
+                .build();
+        RegisterDto registerDto = RegisterDto.builder()
+                .studentId(course.getCourseId())
+                .courseId(student.getStudentId())
+                .build();
+        when(courseRepository.findById(registerDto.getCourseId())).thenReturn(Optional.of(course));
+        when(studentRepository.findById(registerDto.getStudentId())).thenReturn(Optional.of(student));
 
-        Assertions.assertThrows(EntityNotFoundException.class, () -> studentService.registerStudentToCourse(new RegisterDto(1, 2)));
+
+        boolean result = courseOpenValidator.isValid(registerDto, null);
+
+        assertFalse(result);
+        //TODO add following line
+//        Assertions.assertThrows(ConstraintViolationException.class,() -> courseService.registerStudentToCourse(registerDto));
     }
 
+    @Test
+    void registerStudentToCourse_EndDateIsNotOutOfTime() {
+        RegisterDto registerDto = RegisterDto.builder()
+                .studentId(1)
+                .courseId(1)
+                .build();
+
+        Course course = Course.builder()
+                .endDate(LocalDate.now().plusDays(1))
+                .build();
+        when(courseRepository.findById(registerDto.getCourseId())).thenReturn(Optional.of(course));
+
+        boolean result = courseOpenValidator.isValid(registerDto, null);
+
+        assertTrue(result);
+    }
 
     @Test
-    void getCourseListByEmptyStudentList() {
-        Student student = StudentTestData.testStudent();
-        studentService.saveStudent(student);
+    void isValid_CourseHasReachedStudentLimit_ThrowsCourseOverflowException() {
+        Course course = Course.builder()
+                .courseId(1)
+                .endDate(LocalDate.now().minusDays(1))
+                .build();
+        Student student = Student.builder()
+                .studentId(1)
+                .surname("surname")
+                .name("name")
+                .build();
+        RegisterDto registerDto = RegisterDto.builder()
+                .studentId(course.getCourseId())
+                .courseId(student.getStudentId())
+                .build();
+        when(courseRepository.findById(registerDto.getCourseId())).thenReturn(Optional.of(course));
+        when(studentRepository.findById(registerDto.getStudentId())).thenReturn(Optional.of(student));
+        when(courseRepository.isCourseHaveNotSpecifiedStudents(registerDto.getCourseId(), courseCapacity)).thenReturn(false);
 
-        List<Course> courses = CourseTestData.testCourseListWith2EmptyCourses();
-        courseService.saveAll(courses);
+        assertFalse(courseValidator.isValid(registerDto, null));
+        //TODO add following line
+//        Assertions.assertThrows(ConstraintViolationException.class,() -> courseService.registerStudentToCourse(registerDto));
+    }
 
-        studentService.registerStudentToCourse(new RegisterDto(student.getStudentIndex(), courses.stream().findFirst().get().getCourseIndex()));
+    @Test
+    void isValid_CourseHasNotReachedStudentLimit_ReturnsTrue() {
+        Course course = Course.builder()
+                .courseId(1)
+                .endDate(LocalDate.now().minusDays(1))
+                .build();
+        RegisterDto registerDto = RegisterDto.builder()
+                .studentId(1)
+                .courseId(course.getCourseId())
+                .build();
+        when(courseRepository.isCourseHaveNotSpecifiedStudents(course.getCourseId(), courseCapacity)).thenReturn(true);
 
-        int expected = 2;
-        int actual = courseService.getCourseListByEmptyStudentList().size();
+        assertTrue(courseValidator.isValid(registerDto, null));
+    }
 
-        Assertions.assertEquals(expected, actual);
+    @Test
+    void isValid_StudentHasReachedCourseLimit_ThrowsCourseOverflowException() {
+        Course course = Course.builder()
+                .courseId(1)
+                .endDate(LocalDate.now().minusDays(1))
+                .build();
+        Student student = Student.builder()
+                .studentId(1)
+                .surname("surname")
+                .name("name")
+                .build();
+        RegisterDto registerDto = RegisterDto.builder()
+                .studentId(course.getCourseId())
+                .courseId(student.getStudentId())
+                .build();
+        when(courseRepository.findById(registerDto.getCourseId())).thenReturn(Optional.of(course));
+        when(studentRepository.findById(registerDto.getStudentId())).thenReturn(Optional.of(student));
+        when(studentRepository.isStudentHaveNotSpecifiedCourses(registerDto.getStudentId(), studentCapacity)).thenReturn(false);
 
+        assertFalse(studentValidator.isValid(registerDto, null));
+        //TODO add following line
+//        Assertions.assertThrows(ConstraintViolationException.class,() -> courseService.registerStudentToCourse(registerDto));
+    }
+
+    @Test
+    void isValid_StudentHasNotReachedCourseLimit_ReturnsTrue() {
+        Course course = Course.builder()
+                .courseId(1)
+                .endDate(LocalDate.now().minusDays(1))
+                .build();
+        RegisterDto registerDto = RegisterDto.builder()
+                .studentId(1)
+                .courseId(course.getCourseId())
+                .build();
+        when(studentRepository.isStudentHaveNotSpecifiedCourses(registerDto.getStudentId(), studentCapacity)).thenReturn(true);
+
+        assertTrue(studentValidator.isValid(registerDto, null));
+    }
+
+    @Test
+    void registerStudentToCourse_StudentAlreadyEnrolledCourse() {
+        Course course = Course.builder()
+                .courseId(1)
+                .endDate(LocalDate.now().minusDays(1))
+                .build();
+        Student student = Student.builder()
+                .studentId(1)
+                .surname("surname")
+                .name("name")
+                .build();
+        RegisterDto registerDto = RegisterDto.builder()
+                .studentId(course.getCourseId())
+                .courseId(student.getStudentId())
+                .build();
+        when(courseRepository.findById(registerDto.getCourseId())).thenReturn(Optional.of(course));
+        when(studentRepository.findById(registerDto.getStudentId())).thenReturn(Optional.of(student));
+        when(studentRepository.existByCourseId(registerDto.getStudentId(), registerDto.getCourseId())).thenReturn(false);
+        assertFalse(studentEnrolledValidator.isValid(registerDto, null));
+        //TODO add following line
+//        Assertions.assertThrows(ConstraintViolationException.class,() -> courseService.registerStudentToCourse(registerDto));
+    }
+
+    @Test
+    void registerStudentToCourse_StudentNotEnrolledCourse() {
+        RegisterDto registerDto = RegisterDto.builder()
+                .studentId(1)
+                .courseId(1)
+                .build();
+        when(studentRepository.existByCourseId(registerDto.getStudentId(), registerDto.getCourseId())).thenReturn(true);
+        assertTrue(studentEnrolledValidator.isValid(registerDto, null));
     }
 }

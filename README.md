@@ -16,7 +16,6 @@ This api provides endpoints Create, read, update and delete for courses.
 Example: <br>
 { <br>
 "name": "Course Name", <br>
-"courseIndex": 123,<br>
 "startDate": "2023-01-01",<br>
 "endDate": "2023-06-30",<br>
 "description": "Course description"<br>
@@ -37,11 +36,11 @@ Status codes that you can get:
 ### Delete Course
 
 *Endpoint* `DELETE /courses`<br>
-*Description* delete a cours by its index<br>
+*Description* delete a cours by its id<br>
 *Request Body* json :
 
 {<br>
-"index" : 123<br>
+"id" : 123<br>
 }
 
 Response that you get is:<br>
@@ -51,15 +50,12 @@ Response that you get is:<br>
 
 Status codes that you can get:
 
-200 OK: Successful deletion of the course.
+200 OK: Successful deletion of the course.<br>
 404 Not Found: Course not found.
 
 ### Modify Course
-*Endpoint* 'PUT /courses"
-*Description* Modify an existing course via courseIndex
-*Request Body* json:
 
-*Endpoint* `PUT /courses`<br>
+*Endpoint* `PUT /courses?courseId={courseId}`<br>
 *Description* Modify an existing course via courseIndex<br>
 *Request Body* json:<br>
 
@@ -93,21 +89,52 @@ Status codes that you can get:
 Response that you can get is :
 
 {<br>
-"courses": [<br>
+"content": [<br>
 {<br>
-"name": "Course Name",<br>
-"courseIndex": 123,<br>
-"startDate": "2023-01-01",<br>
-"endDate": "2023-12-31",<br>
-"description": "Course description"<br>
+"courseId": 4,<br>
+"name": "Nazwa kursu",<br>
+"startDate": "2024-01-13",<br>
+"endDate": "2024-02-13",<br>
+"description": "Opis kursu"<br>
 },<br>
-    // ... more courses ...
-  ]
+{<br>
+"courseId": 5,<br>
+"name": "Nazwa kursu",<br>
+"startDate": "2024-01-13",<br>
+"endDate": "2024-02-13",<br>
+"description": "Opis kursu"<br>
+}<br>
+],<br>
+"pageable": {<br>
+"pageNumber": 0,<br>
+"pageSize": 20,<br>
+"sort": {<br>
+"empty": true,<br>
+"sorted": false,<br>
+"unsorted": true<br>
+},<br>
+"offset": 0,<br>
+"paged": true,<br>
+"unpaged": false<br>
+},<br>
+"last": true,<br>
+"totalElements": 2,<br>
+"totalPages": 1,<br>
+"size": 20,<br>
+"number": 0,<br>
+"sort": {<br>
+"empty": true,<br>
+"sorted": false,<br>
+"unsorted": true<br>
+},<br>
+"first": true,<br>
+"numberOfElements": 2,<br>
+"empty": false<br>
 }
 
 Status codes that you can get:
 
-200 OK: Successful retrieval of the courses.
+200 OK: Successful retrieval of the courses.<br>
 404 Not Found: No courses found.
 
 # Filter Controller API

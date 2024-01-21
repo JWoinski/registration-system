@@ -1,13 +1,20 @@
 package com.school.registrationsystem.controller;
 
+import com.school.registrationsystem.model.Student;
 import com.school.registrationsystem.model.dto.StudentDto;
-import com.school.registrationsystem.model.request.IndexRequest;
 import com.school.registrationsystem.model.response.ApiResponse;
-import com.school.registrationsystem.model.response.StudentResponse;
 import com.school.registrationsystem.service.StudentService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.ExampleObject;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 /**
@@ -16,52 +23,58 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/students")
+@Validated
 public class StudentController {
     private final StudentService studentService;
 
-    /**
-     * Saves a new student.
-     *
-     * @param studentDto The details of the new student.
-     * @return ResponseEntity containing ApiResponse with the result message.
-     */
+    @Operation(
+            summary = "Save a new student.",
+            description = "Save a new student by specyfing student dto.")
+    @ApiResponses({
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", content = {@Content(schema = @Schema(implementation = ApiResponse.class), examples = @ExampleObject(value = "{\"message\": \"Student saved correctly.\"}"), mediaType = "application/json")}, description = "Student saved correctly."),})
     @PostMapping
-    public ResponseEntity<ApiResponse> saveCourse(@RequestBody StudentDto studentDto) {
+    public ResponseEntity<ApiResponse> saveStudent(@RequestBody @io.swagger.v3.oas.annotations.parameters.RequestBody(
+            content = @Content(
+                    mediaType = "application/json",
+                    examples = @ExampleObject(value = "{\"name\": \"Example name\",\"surname\": \"Example surname\"}"))) StudentDto studentDto) {
         studentService.saveStudent(studentDto);
         return new ResponseEntity<>(new ApiResponse("Student saved correctly"), HttpStatus.CREATED);
     }
 
-    /**
-     * Deletes a student.
-     *
-     * @param studentIndex The request containing the index of the student to be deleted.
-     * @return ResponseEntity containing ApiResponse with the result message.
-     */
+    @Operation(
+            summary = "Delete a student.",
+            description = "Delete a student by its id.")
+    @ApiResponses({
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", content = {@Content(schema = @Schema(implementation = ApiResponse.class), examples = @ExampleObject(value = "{\"message\": \"Student deleted correctly.\"}"), mediaType = "application/json")}, description = "Student deleted correctly."),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", content = {@Content(schema = @Schema())}, description = "Student not found."),})
     @DeleteMapping
-    public ResponseEntity<ApiResponse> deleteCourse(@RequestBody IndexRequest studentIndex) {
-        studentService.deleteStudent(studentIndex.getIndex());
+    public ResponseEntity<ApiResponse> deleteStudent(@RequestParam Integer studentId) {
+        studentService.deleteStudent(studentId);
         return new ResponseEntity<>(new ApiResponse("Student deleted correctly"), HttpStatus.OK);
     }
 
-    /**
-     * Modifies an existing student.
-     *
-     * @param studentDto The modified details of the student.
-     * @return ResponseEntity containing ApiResponse with the result message.
-     */
+    @Operation(
+            summary = "Modify a student.",
+            description = "Modify a student by its id and specified new student dto.")
+    @ApiResponses({
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", content = {@Content(schema = @Schema(implementation = ApiResponse.class), examples = @ExampleObject(value = "{\"message\": \"Student modified correctly.\"}"), mediaType = "application/json")}, description = "Student modified correctly."),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", content = {@Content(schema = @Schema())}, description = "Student not found."),})
     @PutMapping
-    public ResponseEntity<ApiResponse> modifyCourse(@RequestBody StudentDto studentDto) {
-        studentService.modifyStudent(studentDto);
+    public ResponseEntity<ApiResponse> modifyStudent(@RequestBody @io.swagger.v3.oas.annotations.parameters.RequestBody(
+            content = @Content(
+                    mediaType = "application/json",
+                    examples = @ExampleObject(value = "{\"name\": \"Example name\",\"surname\": \"Example surname\"}"))) StudentDto studentDto, @RequestParam int studentId) {
+        studentService.modifyStudent(studentDto, studentId);
         return new ResponseEntity<>(new ApiResponse("Student modified correctly"), HttpStatus.OK);
     }
 
-    /**
-     * Retrieves a list of all students.
-     *
-     * @return ResponseEntity containing StudentResponse with the list of students.
-     */
+    @Operation(
+            summary = "Get students.",
+            description = "Get all students/ by enroled courseId / without enrolled courses.")
     @GetMapping
-    public ResponseEntity<StudentResponse> getCourses() {
-        return new ResponseEntity<>(new StudentResponse(studentService.getAll()), HttpStatus.OK);
+    public ResponseEntity<Page<Student>> getStudents(@RequestParam(required = false) Integer courseId,
+                                                     @RequestParam(required = false) Boolean withoutCourses,
+                                                     Pageable pageable) {
+        return new ResponseEntity<>(studentService.getAll(courseId, withoutCourses, pageable), HttpStatus.OK);
     }
 }

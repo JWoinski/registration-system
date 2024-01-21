@@ -1,20 +1,27 @@
 package com.school.registrationsystem.service;
 
-import com.school.registrationsystem.exception.CourseDateException;
 import com.school.registrationsystem.model.Course;
 import com.school.registrationsystem.model.Student;
 import com.school.registrationsystem.model.dto.CourseDto;
+import com.school.registrationsystem.model.dto.RegisterDto;
+import com.school.registrationsystem.model.specification.CourseSpecification;
 import com.school.registrationsystem.repository.CourseRepository;
 import com.school.registrationsystem.repository.StudentRepository;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
+import org.springframework.validation.annotation.Validated;
 
-import java.util.List;
+import javax.validation.Valid;
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
+@Validated
 public class CourseService {
     private final CourseRepository courseRepository;
     private final StudentRepository studentRepository;
@@ -25,47 +32,14 @@ public class CourseService {
      *
      * @param courseDto Object containing course details used to create a new Course object.
      */
-    public void saveCourse(CourseDto courseDto) {
-        if (validCourseDto(courseDto)) {
-            throw new NullPointerException("Course form is incorrect.");
-        }
-        //Create Course from CourseDto details
+    public void saveCourse(@Valid CourseDto courseDto) {
+        CourseDto coursedto = new CourseDto(courseDto.getName(), courseDto.getStartDate(), courseDto.getEndDate(), courseDto.getDescription());
         Course course = Course.builder()
                 .name(courseDto.getName())
-                .courseIndex(courseDto.getCourseIndex())
                 .startDate(courseDto.getStartDate())
                 .endDate(courseDto.getEndDate())
                 .description(courseDto.getDescription())
                 .build();
-        //Validate the date before save
-        validateDate(course);
-
-        //Save te course
-        courseRepository.save(
-                course);
-    }
-
-    /**
-     * Validates the date range of a course to ensure the start date is not after the end date.
-     * Throws a CourseDateException if the validation fails.
-     *
-     * @param course The Course object to be validated.
-     * @throws CourseDateException Thrown if the start date is after the end date.
-     */
-    private void validateDate(Course course) {
-        if (course.getStartDate().isAfter(course.getEndDate())) {
-            throw new CourseDateException("Start date is after end date.");
-        }
-    }
-
-    /**
-     * Saves a Course object after validating its date and then persists it to the repository.
-     *
-     * @param course The Course object to be saved.
-     * @throws CourseDateException Thrown if the validation of the course date fails.
-     */
-    public void saveCourse(Course course) {
-        validateDate(course);
         courseRepository.save(course);
     }
 
@@ -73,18 +47,19 @@ public class CourseService {
      * Deletes a course by its course index, ensuring proper handling of associated students' course lists.
      * Uses a transaction to maintain data consistency.
      *
-     * @param courseIndex The index of the course to be deleted.
+     * @param courseId The id of the course to be deleted.
      */
     @Transactional
-    public void deleteCourse(int courseIndex) {
-        Course byCourseIndex = courseRepository.findByCourseIndex(courseIndex);
-        if (byCourseIndex != null) {
-            for (Student student : byCourseIndex.getStudentList()) {
-                student.getCourseList().remove(byCourseIndex);
+    public void deleteCourse(int courseId) {
+        Optional<Course> course = Optional.ofNullable(courseRepository.findById(courseId)
+                .orElseThrow(() -> new EntityNotFoundException("Course has been not found.")));
+        if (course.isPresent()) {
+            for (Student student : course.get().getStudentList()) {
+                student.getCourseList().remove(course.get());
                 studentRepository.save(student);
             }
         }
-        courseRepository.deleteByCourseIndex(courseIndex);
+        courseRepository.deleteById(courseId);
     }
 
     /**
@@ -94,25 +69,11 @@ public class CourseService {
      * @throws NullPointerException    Thrown if the modification form is incorrect.
      * @throws EntityNotFoundException Thrown if the course with the specified index is not found.
      */
-    public void modifyCourse(CourseDto courseDto) {
-        if (validCourseDto(courseDto)) {
-            throw new NullPointerException("Modification form is incorrect.");
-        }
-
-        //Retrieve the existing course by its index
-        Course course = getCourseByCourseIndex(courseDto.getCourseIndex());
-        if (course == null) {
-            throw new EntityNotFoundException("Course has been not found.");
-        }
-
-        //update the valuse of the existing course with those from courseDto
-        updateCourseValues(course, courseDto);
-
-        //validate the modified course date
-        validateDate(course);
-
-        //save the modified course to the repository
-        courseRepository.save(course);
+    public void modifyCourse(CourseDto courseDto, int courseId) {
+        Optional<Course> courseOptional = Optional.ofNullable(
+                courseRepository.findById(courseId)
+                        .orElseThrow(() -> new EntityNotFoundException("Course has been not found.")));
+        courseOptional.ifPresent(course -> updateCourseValues(course, courseDto));
     }
 
     /**
@@ -126,63 +87,49 @@ public class CourseService {
         course.setStartDate(courseDto.getStartDate());
         course.setEndDate(courseDto.getEndDate());
         course.setDescription(courseDto.getDescription());
+
+        courseRepository.save(course);
     }
 
     /**
      * Retrieves a list of all courses from the repository.
      *
-     * @return A List of Course objects representing all courses in the repository.
+     * @param studentId       The id of the student to get filtered courses who are enrolled by student id.
+     * @param withoutStudents If true, filters out courses that have no enrolled students.
+     * @param pageable        Object used for pagination, specifying the page size, current page, etc.
+     * @return A Page of Course objects representing courses in the repository based on the specified filters.
      */
-    public List<Course> getAll() {
-        return courseRepository.findAll();
+    public Page<Course> getAll(Integer studentId, Boolean withoutStudents, Pageable pageable) {
+        Specification<Course> specification = CourseSpecification.getSpecification(studentId, withoutStudents);
+        return courseRepository.findAll(specification, pageable);
     }
 
     /**
-     * Retrieves a list of courses associated with a student based on the provided student index.
+     * Registers a student to a course based on the information provided in the RegisterDto.
+     * Uses a transaction to ensure data consistency.
      *
-     * @param studentIndex The index of the student for whom the associated courses are to be retrieved.
-     * @return A List of Course objects representing the courses associated with the specified student.
+     * @param registerDto The RegisterDto containing the details for registering a student to a course.
      */
-    public List<Course> getCourseListByStudentIndex(int studentIndex) {
-        return courseRepository.findByStudentIndex(studentIndex);
-    }
+    @Transactional
+    public void registerStudentToCourse(RegisterDto registerDto) {
+        //Retrieve the student and course based on the provided indices
+        Optional<Student> studentOptional = Optional.ofNullable(
+                studentRepository.findById(registerDto.getStudentId())
+                        .orElseThrow(() -> new EntityNotFoundException("Student not found.")));
+        Optional<Course> courseOptional = Optional.ofNullable(
+                courseRepository.findById(registerDto.getCourseId())
+                        .orElseThrow(() -> new EntityNotFoundException("Course not found.")));
 
-    /**
-     * Retrieves a list of courses with an empty associated student list.
-     *
-     * @return A List of Course objects representing courses without any associated students.
-     */
-    public List<Course> getCourseListByEmptyStudentList() {
-        return courseRepository.findByEmptyStudentList();
-    }
+        if (studentOptional.isPresent() && courseOptional.isPresent()) {
+            Student student = studentOptional.get();
+            Course course = courseOptional.get();
 
-    /**
-     * Retrieves a course based on the provided course index.
-     *
-     * @param courseIndex The index of the course to be retrieved.
-     * @return The Course object representing the course with the specified index, or null if not found.
-     */
-    public Course getCourseByCourseIndex(int courseIndex) {
-        return courseRepository.findByCourseIndex(courseIndex);
-    }
+            //Add the student to the course's student list and vice versa
+            student.getCourseList().add(course);
+            course.getStudentList().add(student);
 
-    /**
-     * Saves a list of courses to the repository.
-     *
-     * @param courses The List of Course objects to be saved.
-     */
-    public void saveAll(List<Course> courses) {
-        courseRepository.saveAll(courses);
-    }
-
-    /**
-     * Checks whether a CourseDto is valid by verifying that essential properties are not null or default.
-     *
-     * @param courseDto The CourseDto to be validated.
-     * @return true if the CourseDto is considered invalid, false otherwise.
-     */
-
-    private boolean validCourseDto(CourseDto courseDto) {
-        return courseDto.getName() == null || courseDto.getStartDate() == null || courseDto.getEndDate() == null || courseDto.getDescription() == null || courseDto.getCourseIndex() == 0;
+            //Save the updated student information to the repostiory
+            studentRepository.save(student);
+        }
     }
 }

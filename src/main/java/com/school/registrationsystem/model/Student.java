@@ -1,11 +1,7 @@
 package com.school.registrationsystem.model;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 import java.util.List;
 
@@ -16,18 +12,16 @@ import java.util.List;
 @Entity
 public class Student {
     @Id
-    @GeneratedValue(strategy = GenerationType.AUTO)
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private int studentId;
     private String name;
     private String surname;
-    private int studentIndex;
-    @JsonIgnore
+    @ToString.Exclude
     @ManyToMany(mappedBy = "studentList", cascade = {CascadeType.DETACH, CascadeType.PERSIST}, fetch = FetchType.EAGER)
     private List<Course> courseList;
 
-    public Student(String name, String surname, int studentIndex) {
+    public Student(String name, String surname) {
         this.name = name;
         this.surname = surname;
-        this.studentIndex = studentIndex;
     }
 }

@@ -1,20 +1,23 @@
 package com.school.registrationsystem.model.dto;
 
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import com.school.registrationsystem.validator.date.DateValid;
+import lombok.*;
 
 import java.time.LocalDate;
 
 @Data
 @NoArgsConstructor
-@AllArgsConstructor
 @Builder
+@AllArgsConstructor
 public class CourseDto {
+    @NonNull
     private String name;
-    private int courseIndex;
+    @NonNull
+    @DateValid
     private LocalDate startDate;
+    @NonNull
+    @DateValid
     private LocalDate endDate;
+    @NonNull
     private String description;
 }
