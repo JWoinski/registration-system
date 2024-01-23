@@ -25,6 +25,6 @@ public class StudentValidator implements ConstraintValidator<HasStudentCapacity,
 
     @Override
     public boolean isValid(RegisterDto registerDto, ConstraintValidatorContext constraintValidatorContext) {
-        return studentRepository.isStudentHaveNotSpecifiedCourses(registerDto.getStudentId(), studentCapacity);
+        return studentRepository.isStudentHaveTooManyCourses(registerDto.getStudentId(), studentCapacity);
     }
 }

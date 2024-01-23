@@ -30,6 +30,6 @@ public class CourseValidator implements ConstraintValidator<HasCourseCapacity, R
      */
     @Override
     public boolean isValid(RegisterDto registerDto, ConstraintValidatorContext constraintValidatorContext) {
-        return courseRepository.isCourseHaveNotSpecifiedStudents(registerDto.getCourseId(), courseCapacity);
+        return courseRepository.isCourseHaveTooManyStudents(registerDto.getCourseId(), courseCapacity);
     }
 }

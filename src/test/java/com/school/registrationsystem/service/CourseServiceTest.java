@@ -1,5 +1,9 @@
 package com.school.registrationsystem.service;
 
+import com.school.registrationsystem.exception.CapacityException;
+import com.school.registrationsystem.exception.CourseClosedException;
+import com.school.registrationsystem.exception.DateValidException;
+import com.school.registrationsystem.exception.StudentAlreadyEnrolledException;
 import com.school.registrationsystem.model.Course;
 import com.school.registrationsystem.model.Student;
 import com.school.registrationsystem.model.dto.CourseDto;
@@ -8,11 +12,9 @@ import com.school.registrationsystem.repository.CourseRepository;
 import com.school.registrationsystem.repository.StudentRepository;
 import com.school.registrationsystem.testData.CourseControllerTestData;
 import com.school.registrationsystem.testData.StudentControllerTestData;
-import com.school.registrationsystem.validator.capacity.course.CourseValidator;
-import com.school.registrationsystem.validator.capacity.student.StudentValidator;
 import com.school.registrationsystem.validator.registrationPeriod.CourseOpenValidator;
-import com.school.registrationsystem.validator.studentEnrolled.StudentEnrolledValidator;
 import jakarta.persistence.EntityNotFoundException;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
@@ -36,18 +38,12 @@ class CourseServiceTest {
     private CourseRepository courseRepository;
     @Mock
     private StudentRepository studentRepository;
-    @Mock
+    @InjectMocks
     private StudentControllerTestData studentTest;
-    @Mock
+    @InjectMocks
     private CourseControllerTestData courseTest;
     @InjectMocks
     private CourseOpenValidator courseOpenValidator;
-    @InjectMocks
-    private StudentValidator studentValidator;
-    @InjectMocks
-    private CourseValidator courseValidator;
-    @InjectMocks
-    private StudentEnrolledValidator studentEnrolledValidator;
     @Value("${course.students.threshold}")
     private int courseCapacity;
     @Value("${student.courses.threshold}")
@@ -73,8 +69,7 @@ class CourseServiceTest {
 
     @Test
     void initalizeCourse_shouldThrowExcepetion_causeStartDateIsAfterEndDate() {
-        //TODO course startdate is after end date
-//        assertThrows(ConstraintViolationException.class, () -> new CourseDto("name", LocalDate.now(), LocalDate.now().minusYears(1), "description"));
+        assertThrows(DateValidException.class, () -> courseService.saveCourse(new CourseDto("name", LocalDate.now(), LocalDate.now().minusYears(1), "description")));
     }
 
     @Test
@@ -125,13 +120,12 @@ class CourseServiceTest {
         registerDto.setStudentId(1);
         registerDto.setCourseId(2);
 
-        Student student = new Student();
+        Student student = studentTest.testStudent_correctValues();
         student.setStudentId(1);
         student.setCourseList(new ArrayList<>());
-
-        Course course = new Course();
-        course.setCourseId(2);
+        Course course = courseTest.testCourse_correctValues();
         course.setStudentList(new ArrayList<>());
+        course.setCourseId(2);
 
         when(studentRepository.findById(1)).thenReturn(Optional.of(student));
         when(courseRepository.findById(2)).thenReturn(Optional.of(course));
@@ -197,41 +191,20 @@ class CourseServiceTest {
         when(courseRepository.findById(registerDto.getCourseId())).thenReturn(Optional.of(course));
         when(studentRepository.findById(registerDto.getStudentId())).thenReturn(Optional.of(student));
 
-
-        boolean result = courseOpenValidator.isValid(registerDto, null);
-
-        assertFalse(result);
-        //TODO add following line
-//        Assertions.assertThrows(ConstraintViolationException.class,() -> courseService.registerStudentToCourse(registerDto));
+        Assertions.assertThrows(CourseClosedException.class, () -> courseService.registerStudentToCourse(registerDto));
     }
-
-    @Test
-    void registerStudentToCourse_EndDateIsNotOutOfTime() {
-        RegisterDto registerDto = RegisterDto.builder()
-                .studentId(1)
-                .courseId(1)
-                .build();
-
-        Course course = Course.builder()
-                .endDate(LocalDate.now().plusDays(1))
-                .build();
-        when(courseRepository.findById(registerDto.getCourseId())).thenReturn(Optional.of(course));
-
-        boolean result = courseOpenValidator.isValid(registerDto, null);
-
-        assertTrue(result);
-    }
-
     @Test
     void isValid_CourseHasReachedStudentLimit_ThrowsCourseOverflowException() {
         Course course = Course.builder()
                 .courseId(1)
-                .endDate(LocalDate.now().minusDays(1))
+                .endDate(LocalDate.now().plusDays(1))
+                .studentList(new ArrayList<>())
                 .build();
         Student student = Student.builder()
                 .studentId(1)
                 .surname("surname")
                 .name("name")
+                .courseList(new ArrayList<>())
                 .build();
         RegisterDto registerDto = RegisterDto.builder()
                 .studentId(course.getCourseId())
@@ -239,38 +212,23 @@ class CourseServiceTest {
                 .build();
         when(courseRepository.findById(registerDto.getCourseId())).thenReturn(Optional.of(course));
         when(studentRepository.findById(registerDto.getStudentId())).thenReturn(Optional.of(student));
-        when(courseRepository.isCourseHaveNotSpecifiedStudents(registerDto.getCourseId(), courseCapacity)).thenReturn(false);
+        when(courseRepository.isCourseHaveTooManyStudents(registerDto.getCourseId(), courseCapacity)).thenReturn(true);
 
-        assertFalse(courseValidator.isValid(registerDto, null));
-        //TODO add following line
-//        Assertions.assertThrows(ConstraintViolationException.class,() -> courseService.registerStudentToCourse(registerDto));
-    }
-
-    @Test
-    void isValid_CourseHasNotReachedStudentLimit_ReturnsTrue() {
-        Course course = Course.builder()
-                .courseId(1)
-                .endDate(LocalDate.now().minusDays(1))
-                .build();
-        RegisterDto registerDto = RegisterDto.builder()
-                .studentId(1)
-                .courseId(course.getCourseId())
-                .build();
-        when(courseRepository.isCourseHaveNotSpecifiedStudents(course.getCourseId(), courseCapacity)).thenReturn(true);
-
-        assertTrue(courseValidator.isValid(registerDto, null));
+        Assertions.assertThrows(CapacityException.class, () -> courseService.registerStudentToCourse(registerDto));
     }
 
     @Test
     void isValid_StudentHasReachedCourseLimit_ThrowsCourseOverflowException() {
         Course course = Course.builder()
                 .courseId(1)
-                .endDate(LocalDate.now().minusDays(1))
+                .endDate(LocalDate.now().plusDays(1))
+                .studentList(new ArrayList<>())
                 .build();
         Student student = Student.builder()
                 .studentId(1)
                 .surname("surname")
                 .name("name")
+                .courseList(new ArrayList<>())
                 .build();
         RegisterDto registerDto = RegisterDto.builder()
                 .studentId(course.getCourseId())
@@ -278,38 +236,22 @@ class CourseServiceTest {
                 .build();
         when(courseRepository.findById(registerDto.getCourseId())).thenReturn(Optional.of(course));
         when(studentRepository.findById(registerDto.getStudentId())).thenReturn(Optional.of(student));
-        when(studentRepository.isStudentHaveNotSpecifiedCourses(registerDto.getStudentId(), studentCapacity)).thenReturn(false);
+        when(studentRepository.isStudentHaveTooManyCourses(registerDto.getStudentId(), studentCapacity)).thenReturn(true);
 
-        assertFalse(studentValidator.isValid(registerDto, null));
-        //TODO add following line
-//        Assertions.assertThrows(ConstraintViolationException.class,() -> courseService.registerStudentToCourse(registerDto));
+        Assertions.assertThrows(CapacityException.class, () -> courseService.registerStudentToCourse(registerDto));
     }
-
-    @Test
-    void isValid_StudentHasNotReachedCourseLimit_ReturnsTrue() {
-        Course course = Course.builder()
-                .courseId(1)
-                .endDate(LocalDate.now().minusDays(1))
-                .build();
-        RegisterDto registerDto = RegisterDto.builder()
-                .studentId(1)
-                .courseId(course.getCourseId())
-                .build();
-        when(studentRepository.isStudentHaveNotSpecifiedCourses(registerDto.getStudentId(), studentCapacity)).thenReturn(true);
-
-        assertTrue(studentValidator.isValid(registerDto, null));
-    }
-
     @Test
     void registerStudentToCourse_StudentAlreadyEnrolledCourse() {
         Course course = Course.builder()
                 .courseId(1)
-                .endDate(LocalDate.now().minusDays(1))
+                .endDate(LocalDate.now().plusDays(1))
+                .studentList(new ArrayList<>())
                 .build();
         Student student = Student.builder()
                 .studentId(1)
                 .surname("surname")
                 .name("name")
+                .courseList(new ArrayList<>())
                 .build();
         RegisterDto registerDto = RegisterDto.builder()
                 .studentId(course.getCourseId())
@@ -317,19 +259,8 @@ class CourseServiceTest {
                 .build();
         when(courseRepository.findById(registerDto.getCourseId())).thenReturn(Optional.of(course));
         when(studentRepository.findById(registerDto.getStudentId())).thenReturn(Optional.of(student));
-        when(studentRepository.existByCourseId(registerDto.getStudentId(), registerDto.getCourseId())).thenReturn(false);
-        assertFalse(studentEnrolledValidator.isValid(registerDto, null));
-        //TODO add following line
-//        Assertions.assertThrows(ConstraintViolationException.class,() -> courseService.registerStudentToCourse(registerDto));
-    }
+        when(studentRepository.existByCourseId(student.getStudentId(), course.getCourseId())).thenReturn(true);
 
-    @Test
-    void registerStudentToCourse_StudentNotEnrolledCourse() {
-        RegisterDto registerDto = RegisterDto.builder()
-                .studentId(1)
-                .courseId(1)
-                .build();
-        when(studentRepository.existByCourseId(registerDto.getStudentId(), registerDto.getCourseId())).thenReturn(true);
-        assertTrue(studentEnrolledValidator.isValid(registerDto, null));
+        Assertions.assertThrows(StudentAlreadyEnrolledException.class, () -> courseService.registerStudentToCourse(registerDto));
     }
 }

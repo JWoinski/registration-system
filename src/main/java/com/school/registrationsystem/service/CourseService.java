@@ -1,5 +1,9 @@
 package com.school.registrationsystem.service;
 
+import com.school.registrationsystem.exception.CapacityException;
+import com.school.registrationsystem.exception.CourseClosedException;
+import com.school.registrationsystem.exception.DateValidException;
+import com.school.registrationsystem.exception.StudentAlreadyEnrolledException;
 import com.school.registrationsystem.model.Course;
 import com.school.registrationsystem.model.Student;
 import com.school.registrationsystem.model.dto.CourseDto;
@@ -10,21 +14,24 @@ import com.school.registrationsystem.repository.StudentRepository;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
-import org.springframework.validation.annotation.Validated;
 
-import javax.validation.Valid;
+import java.time.LocalDate;
 import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
-@Validated
 public class CourseService {
     private final CourseRepository courseRepository;
     private final StudentRepository studentRepository;
+    @Value("${course.students.threshold}")
+    private int courseCapacity;
+    @Value("${student.courses.threshold}")
+    private int studentCapacity;
 
     /**
      * Saves a new course based on the information provided in the CourseDto object.
@@ -32,8 +39,10 @@ public class CourseService {
      *
      * @param courseDto Object containing course details used to create a new Course object.
      */
-    public void saveCourse(@Valid CourseDto courseDto) {
-        CourseDto coursedto = new CourseDto(courseDto.getName(), courseDto.getStartDate(), courseDto.getEndDate(), courseDto.getDescription());
+    public void saveCourse(CourseDto courseDto) {
+        if (courseDto.getStartDate().isAfter(courseDto.getEndDate())) {
+            throw new DateValidException("start date is after end date");
+        }
         Course course = Course.builder()
                 .name(courseDto.getName())
                 .startDate(courseDto.getStartDate())
@@ -123,13 +132,29 @@ public class CourseService {
         if (studentOptional.isPresent() && courseOptional.isPresent()) {
             Student student = studentOptional.get();
             Course course = courseOptional.get();
-
+            validRegister(student, course);
             //Add the student to the course's student list and vice versa
             student.getCourseList().add(course);
             course.getStudentList().add(student);
 
             //Save the updated student information to the repostiory
             studentRepository.save(student);
+        }
+    }
+
+    private void validRegister(Student student, Course course) {
+        //TODO
+        if (studentRepository.isStudentHaveTooManyCourses(student.getStudentId(), studentCapacity)) {
+            throw new CapacityException("Student have too many courses");
+        }
+        if (courseRepository.isCourseHaveTooManyStudents(course.getCourseId(), courseCapacity)) {
+            throw new CapacityException("Course have too many students");
+        }
+        if (course.getEndDate().isBefore(LocalDate.now())) {
+            throw new CourseClosedException("Course has been closed.");
+        }
+        if (studentRepository.existByCourseId(student.getStudentId(), course.getCourseId())) {
+            throw new StudentAlreadyEnrolledException("Student is already enrolled to the course.");
         }
     }
 }

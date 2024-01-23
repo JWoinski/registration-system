@@ -9,8 +9,8 @@ import org.springframework.stereotype.Repository;
 
 @Repository
 public interface CourseRepository extends JpaRepository<Course, Integer>, JpaSpecificationExecutor<Course> {
-    @Query("SELECT CASE WHEN COUNT(s) < :courseCapacity" +
+    @Query("SELECT CASE WHEN COUNT(s) >= :courseCapacity" +
             " THEN true ELSE false END " +
             "FROM Course c JOIN c.studentList s WHERE c.courseId = :courseId")
-    boolean isCourseHaveNotSpecifiedStudents(@Param("courseId") int courseId, @Param("courseCapacity") int courseCapacity);
+    boolean isCourseHaveTooManyStudents(@Param("courseId") int courseId, @Param("courseCapacity") int courseCapacity);
 }

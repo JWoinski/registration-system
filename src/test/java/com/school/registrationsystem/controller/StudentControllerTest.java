@@ -58,6 +58,7 @@ public class StudentControllerTest {
 
     @AfterEach
     void clean() {
+        courseRepository.deleteAll();
         studentRepository.deleteAll();
     }
 
@@ -141,7 +142,6 @@ public class StudentControllerTest {
         Course savedCourse1 = courseRepository.save(courseTest.testCourse_CorrectValues1());
 
         Student savedStudent1 = studentRepository.save(studentTest.testStudent_correctValues1());
-
         Student savedStudent2 = studentRepository.save(studentTest.testStudent_correctValues2());
 
         courseService.registerStudentToCourse(RegisterDto.builder()

@@ -20,8 +20,23 @@ public class GlobalExceptionHandler {
         return new ResponseEntity<>(new ApiError(e.getMessage()), HttpStatus.BAD_REQUEST);
     }
 
-    @ExceptionHandler(NullPointerException.class)
-    public ResponseEntity<ApiError> handleNullPointerException(NullPointerException e) {
+    @ExceptionHandler(CapacityException.class)
+    public ResponseEntity<ApiError> handleCapacityException(CapacityException e) {
+        return new ResponseEntity<>(new ApiError(e.getMessage()), HttpStatus.BAD_REQUEST);
+    }
+
+    @ExceptionHandler(CourseClosedException.class)
+    public ResponseEntity<ApiError> handleCourseClosedException(CourseClosedException e) {
+        return new ResponseEntity<>(new ApiError(e.getMessage()), HttpStatus.BAD_REQUEST);
+    }
+
+    @ExceptionHandler(StudentAlreadyEnrolledException.class)
+    public ResponseEntity<ApiError> handleStudentAlreadyEnrolledException(StudentAlreadyEnrolledException e) {
+        return new ResponseEntity<>(new ApiError(e.getMessage()), HttpStatus.BAD_REQUEST);
+    }
+
+    @ExceptionHandler(DateValidException.class)
+    public ResponseEntity<ApiError> handleDateValidException(DateValidException e) {
         return new ResponseEntity<>(new ApiError(e.getMessage()), HttpStatus.BAD_REQUEST);
     }
 }

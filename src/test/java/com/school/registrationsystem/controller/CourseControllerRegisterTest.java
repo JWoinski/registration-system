@@ -136,7 +136,6 @@ public class CourseControllerRegisterTest {
 
     @Test
     void registerStudentToCourse_EndDateIsOutOfTime() throws Exception {
-        //TODO register course end time before localdate.now
         Student savedStudent = studentRepository.save(studentTest.testStudent_correctValues());
 
         Course savedCourse = courseRepository.save(courseTest.testCourse_pastEndDate());
@@ -154,7 +153,6 @@ public class CourseControllerRegisterTest {
 
     @Test
     void registerStudentToCourse_StudentGot5CoursesAlready() throws Exception {
-        //TODO register student got 5 courses already
         Student savedStudent = studentRepository.save(studentTest.testStudent_correctValues());
 
         List<Course> courseList = courseRepository.saveAll(courseTest.testList5Courses());
@@ -201,7 +199,7 @@ public class CourseControllerRegisterTest {
         //TODO register student already enrolled course
         Student savedStudent = studentRepository.save(studentTest.testStudent_correctValues());
 
-        Course savedCourse = courseRepository.save(courseTest.testCourse_pastEndDate());
+        Course savedCourse = courseRepository.save(courseTest.testCourse_correctValues());
 
         courseService.registerStudentToCourse(new RegisterDto(savedStudent.getStudentId(), savedCourse.getCourseId()));
 

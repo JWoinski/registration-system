@@ -9,8 +9,6 @@ import java.util.stream.IntStream;
 
 @Service
 public class StudentControllerTestData {
-    private CourseControllerTestData courseTest;
-
     public Student testStudent_correctValues() {
         return Student.builder()
                 .name("nazwa studenta")
@@ -50,7 +48,6 @@ public class StudentControllerTestData {
                 .build();
     }
 
-
     public List<Student> testList50Students() {
         return IntStream.range(0, 50)
                 .mapToObj(i -> Student.builder()
@@ -60,6 +57,4 @@ public class StudentControllerTestData {
                         .build())
                 .toList();
     }
-
-
 }
