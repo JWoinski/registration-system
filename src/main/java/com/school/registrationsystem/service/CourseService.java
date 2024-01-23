@@ -143,7 +143,6 @@ public class CourseService {
     }
 
     private void validRegister(Student student, Course course) {
-        //TODO
         if (studentRepository.isStudentHaveTooManyCourses(student.getStudentId(), studentCapacity)) {
             throw new CapacityException("Student have too many courses");
         }

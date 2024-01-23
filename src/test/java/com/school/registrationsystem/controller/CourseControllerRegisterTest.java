@@ -174,7 +174,6 @@ public class CourseControllerRegisterTest {
 
     @Test
     void registerStudentToCourse_CourseGot50StudentsAlready() throws Exception {
-        //TODO register course got 50 students already
         Course savedCourse = courseRepository.save(courseTest.testCourse_correctValues());
 
         List<Student> studentList = studentRepository.saveAll(studentTest.testList50Students());
@@ -196,7 +195,6 @@ public class CourseControllerRegisterTest {
 
     @Test
     void registerStudentToCourse_StudentAlreadyEnrolledCourse() throws Exception {
-        //TODO register student already enrolled course
         Student savedStudent = studentRepository.save(studentTest.testStudent_correctValues());
 
         Course savedCourse = courseRepository.save(courseTest.testCourse_correctValues());

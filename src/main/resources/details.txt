@@ -50,4 +50,4 @@ work time:
 28.12 : 11:45 -
 sum: 11h 20m / 20h
 
-//TODO docker się nie odpala
+//TODO docker compose & set liquibase
