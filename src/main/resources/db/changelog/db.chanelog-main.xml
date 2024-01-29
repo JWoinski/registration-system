@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.8.xsd">
+
+    <include file="db.changelog-course.xml" relativeToChangelogFile="true"/>
+    <include file="db.changelog-student.xml" relativeToChangelogFile="true"/>
+
+    <changeSet id="createStudentCourseTable" author="jakub">
+        <createTable tableName="course_student_list">
+            <column name="student_list_student_id" type="INT">
+                <constraints foreignKeyName="fk_student_course_student" references="student(student_id)"/>
+            </column>
+            <column name="course_list_course_id" type="INT">
+                <constraints foreignKeyName="fk_student_course_course" references="course(course_id)"/>
+            </column>
+        </createTable>
+    </changeSet>
+
+</databaseChangeLog>
