@@ -349,8 +349,10 @@ The application will be accessible at http://localhost:8080.
 Technologies Used in project:<br>
 Java<br>
 Maven<br>
+Liquibase<br>
 Spring Boot<br>
 Docker<br>
 JUnit 5<br>
+Mockito<br>
 MySQL<br>
 Hibernate<br>
